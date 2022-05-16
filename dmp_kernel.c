@@ -11,6 +11,8 @@
 #include "../../kernel/proc.h"
 #include "../../kernel/ipc.h"
 
+#include "../pm/mproc.h"
+
 #define click_to_round_k(n) \
 	((unsigned) ((((unsigned long) (n) << CLICK_SHIFT) + 512) / 1024))
 
@@ -234,6 +236,12 @@ PUBLIC void image_dmp()
    register struct proc *rp;
    vir_bytes ptr_diff;
    int r;
+   /* ADDED PIECE BEG */
+   struct mproc mproc[NR_PROCS];
+   struct mproc *mp;
+   
+   getsysinfo(PM_PROC_NR, SI_PROC_TAB, mproc);
+   /* ADDED PIECE END */
 
    /* First obtain a scheduling information. */
    if ((r = sys_getschedinfo(proc, rdy_head)) != OK) {
@@ -259,18 +267,27 @@ PUBLIC void image_dmp()
 
    /* Now show scheduling queues. */
    printf("Dumping scheduling queues.\n");
-   printf("-PRIOR- -PNR- -CPU-TIME- -SYS-TIME- -STACK-POINTER-\n");
+   printf("-PRIOR- -PID/PNR- -CPU-TIME- -SYS-TIME- -STACK-POINTER-\n");
 
    for (r=0;r<NR_SCHED_QUEUES; r++) {
        rp = rdy_head[r];
        if (!rp) continue;
        while (rp != NIL_PROC) {
-           printf("%6d  %4d  %9lu  %9lu  %14lx\n",
+	   /* ADDED PIECE BEG */
+           int pid_pnr;
+           if (rp->p_nr < 0)
+               pid_pnr = rp->p_nr;
+           else {
+               mp = &mproc[rp->p_nr];
+               pid_pnr = mp->mp_pid;
+           }
+           printf("%6d  %8d  %9lu  %9lu  %14lx\n",
              r,
-             rp->p_nr,
+             pid_pnr,
              rp->p_user_time,
              rp->p_sys_time,
              (unsigned long) rp->p_reg.sp);
+	   /* ADDED PIECE END */
            rp = rp->p_nextready;
        }
    }
