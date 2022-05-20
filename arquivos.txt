@@ -1,0 +1,5 @@
+/usr/src/servers/pm/table.c
+/usr/src/servers/pm/proto.h
+/usr/src/servers/pm/getset.c
+/usr/src/servers/fs/table.c
+/usr/src/include/minix/callnr.h
